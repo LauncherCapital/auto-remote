@@ -16,7 +16,6 @@ mac:
         - arm64
         - x64
   category: public.app-category.productivity
-  entitlementsInherit: build/entitlements.mac.plist
 win:
   target:
     - target: nsis
