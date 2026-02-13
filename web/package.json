@@ -1,0 +1,17 @@
+{
+  "name": "auto-remote-oauth",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --hot api/index.ts",
+    "build": "bun build api/index.ts --outdir dist --target node"
+  },
+  "dependencies": {
+    "hono": "^4.7.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.9.0"
+  }
+}

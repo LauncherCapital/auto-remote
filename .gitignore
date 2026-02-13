@@ -6,3 +6,6 @@ config.json
 auth.json
 *.log
 .DS_Store
+web/node_modules/
+web/dist/
+.vercel/
