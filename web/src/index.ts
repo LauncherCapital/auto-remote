@@ -68,13 +68,16 @@ function escapeHtml(str: string): string {
 
 function landingPage(origin: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>OAuth - 업무일지 자동화</title><style>${PAGE_STYLE}</style></head>
+<title>업무일지 자동화</title><style>${PAGE_STYLE}</style></head>
 <body><div class="container">
   <h1>업무일지 자동화</h1>
-  <p class="sub">Connect your accounts to get started</p>
-  <a href="${origin}/api/slack/authorize" class="btn btn-slack">Connect Slack</a>
-  <a href="${origin}/api/github/authorize" class="btn btn-github">Connect GitHub</a>
-  <p class="info">After connecting, copy the token back into the desktop app.</p>
+  <p class="sub">Remote.com Time Tracking 업무내용 자동 입력 도구</p>
+  <a href="${origin}/download" class="btn" style="background:#3b82f6;">앱 다운로드</a>
+  <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #334155;">
+    <p class="sub" style="margin-bottom:0.75rem;">이미 앱을 설치했나요? 계정을 연결하세요.</p>
+    <a href="${origin}/api/slack/authorize" class="btn btn-slack">Connect Slack</a>
+    <a href="${origin}/api/github/authorize" class="btn btn-github">Connect GitHub</a>
+  </div>
 </div></body></html>`
 }
 
@@ -125,6 +128,104 @@ function errorPage(provider: string, message: string): string {
 
 app.get('/', (c) => {
   return c.html(landingPage(getOrigin(c.req.raw)))
+})
+
+// Download page — detects OS and links to latest GitHub Release
+const GITHUB_REPO = 'LauncherCapital/auto-remote'
+
+type ReleaseAsset = {
+  name: string
+  browser_download_url: string
+  size: number
+}
+
+type ReleaseData = {
+  tag_name: string
+  published_at: string
+  assets: ReleaseAsset[]
+}
+
+function detectOS(ua: string): 'mac' | 'windows' | 'unknown' {
+  const lower = ua.toLowerCase()
+  if (lower.includes('windows') || lower.includes('win64') || lower.includes('win32')) return 'windows'
+  if (lower.includes('macintosh') || lower.includes('mac os')) return 'mac'
+  return 'unknown'
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+}
+
+function downloadPage(release: ReleaseData | null, detectedOS: string): string {
+  if (!release) {
+    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>다운로드 - 업무일지 자동화</title><style>${PAGE_STYLE}</style></head>
+<body><div class="container">
+  <h1>업무일지 자동화</h1>
+  <p class="sub">아직 릴리즈된 버전이 없습니다.</p>
+  <p class="info">관리자에게 문의하세요.</p>
+</div></body></html>`
+  }
+
+  const dmg = release.assets.find(a => a.name.endsWith('.dmg'))
+  const exe = release.assets.find(a => a.name.endsWith('.exe'))
+  const version = release.tag_name
+
+  const primaryAsset = detectedOS === 'windows' ? exe : dmg
+  const secondaryAsset = detectedOS === 'windows' ? dmg : exe
+  const primaryLabel = detectedOS === 'windows' ? 'Windows' : 'macOS'
+  const secondaryLabel = detectedOS === 'windows' ? 'macOS' : 'Windows'
+
+  let primaryBtn = ''
+  if (primaryAsset) {
+    primaryBtn = `<a href="${escapeHtml(primaryAsset.browser_download_url)}" class="btn" style="background:#3b82f6;font-size:1rem;padding:1rem 1.5rem;">
+      ${primaryLabel}용 다운로드 <span style="font-size:0.8rem;opacity:0.8;">${version}</span>
+      <br><span style="font-size:0.75rem;opacity:0.6;">${escapeHtml(primaryAsset.name)} · ${formatBytes(primaryAsset.size)}</span>
+    </a>`
+  }
+
+  let secondaryBtn = ''
+  if (secondaryAsset) {
+    secondaryBtn = `<a href="${escapeHtml(secondaryAsset.browser_download_url)}" class="btn" style="background:#334155;font-size:0.85rem;">
+      ${secondaryLabel}용 다운로드
+      <span style="font-size:0.75rem;opacity:0.6;">${formatBytes(secondaryAsset.size)}</span>
+    </a>`
+  }
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>다운로드 - 업무일지 자동화</title><style>${PAGE_STYLE}
+  .version { font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem; }
+</style></head>
+<body><div class="container">
+  <h1>업무일지 자동화</h1>
+  <p class="sub">Remote.com Time Tracking 업무내용 자동 입력 도구</p>
+  <p class="version">${escapeHtml(version)} · ${new Date(release.published_at).toLocaleDateString('ko-KR')}</p>
+  ${primaryBtn}
+  ${secondaryBtn}
+  <p class="info">설치 후 이 사이트에서 Slack/GitHub 계정을 연결하세요.</p>
+</div></body></html>`
+}
+
+app.get('/download', async (c) => {
+  const ua = c.req.header('user-agent') ?? ''
+  const os = detectOS(ua)
+
+  let release: ReleaseData | null = null
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+      headers: {
+        Accept: 'application/vnd.github.v3+json',
+        'User-Agent': 'auto-remote-web',
+      },
+    })
+    if (res.ok) {
+      release = (await res.json()) as ReleaseData
+    }
+  } catch {
+  }
+
+  return c.html(downloadPage(release, os))
 })
 
 // Slack OAuth — scopes kept in sync with src/main/oauth.ts
