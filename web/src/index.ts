@@ -6,6 +6,7 @@ type Env = {
   SLACK_CLIENT_SECRET: string
   GITHUB_CLIENT_ID: string
   GITHUB_CLIENT_SECRET: string
+  GITHUB_TOKEN: string
 }
 
 const app = new Hono<{ Bindings: Env }>()
@@ -16,6 +17,7 @@ function getEnv(c: { env: Env; req: { raw: Request } }): Env {
     SLACK_CLIENT_SECRET: c.env?.SLACK_CLIENT_SECRET ?? process.env.SLACK_CLIENT_SECRET ?? '',
     GITHUB_CLIENT_ID: c.env?.GITHUB_CLIENT_ID ?? process.env.GITHUB_CLIENT_ID ?? '',
     GITHUB_CLIENT_SECRET: c.env?.GITHUB_CLIENT_SECRET ?? process.env.GITHUB_CLIENT_SECRET ?? '',
+    GITHUB_TOKEN: c.env?.GITHUB_TOKEN ?? process.env.GITHUB_TOKEN ?? '',
   }
 }
 
@@ -157,7 +159,7 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-function downloadPage(release: ReleaseData | null, detectedOS: string): string {
+function downloadPage(release: ReleaseData | null, detectedOS: string, origin: string): string {
   if (!release) {
     return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>다운로드 - 업무일지 자동화</title><style>${PAGE_STYLE}</style></head>
@@ -179,7 +181,8 @@ function downloadPage(release: ReleaseData | null, detectedOS: string): string {
 
   let primaryBtn = ''
   if (primaryAsset) {
-    primaryBtn = `<a href="${escapeHtml(primaryAsset.browser_download_url)}" class="btn" style="background:#3b82f6;font-size:1rem;padding:1rem 1.5rem;">
+    const url = `${origin}/download/${encodeURIComponent(primaryAsset.name)}`
+    primaryBtn = `<a href="${escapeHtml(url)}" class="btn" style="background:#3b82f6;font-size:1rem;padding:1rem 1.5rem;">
       ${primaryLabel}용 다운로드 <span style="font-size:0.8rem;opacity:0.8;">${version}</span>
       <br><span style="font-size:0.75rem;opacity:0.6;">${escapeHtml(primaryAsset.name)} · ${formatBytes(primaryAsset.size)}</span>
     </a>`
@@ -187,7 +190,8 @@ function downloadPage(release: ReleaseData | null, detectedOS: string): string {
 
   let secondaryBtn = ''
   if (secondaryAsset) {
-    secondaryBtn = `<a href="${escapeHtml(secondaryAsset.browser_download_url)}" class="btn" style="background:#334155;font-size:0.85rem;">
+    const url = `${origin}/download/${encodeURIComponent(secondaryAsset.name)}`
+    secondaryBtn = `<a href="${escapeHtml(url)}" class="btn" style="background:#334155;font-size:0.85rem;">
       ${secondaryLabel}용 다운로드
       <span style="font-size:0.75rem;opacity:0.6;">${formatBytes(secondaryAsset.size)}</span>
     </a>`
@@ -207,17 +211,24 @@ function downloadPage(release: ReleaseData | null, detectedOS: string): string {
 </div></body></html>`
 }
 
+function githubHeaders(token: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    Accept: 'application/vnd.github.v3+json',
+    'User-Agent': 'auto-remote-web',
+  }
+  if (token) headers['Authorization'] = `Bearer ${token}`
+  return headers
+}
+
 app.get('/download', async (c) => {
+  const env = getEnv(c)
   const ua = c.req.header('user-agent') ?? ''
   const os = detectOS(ua)
 
   let release: ReleaseData | null = null
   try {
     const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-      headers: {
-        Accept: 'application/vnd.github.v3+json',
-        'User-Agent': 'auto-remote-web',
-      },
+      headers: githubHeaders(env.GITHUB_TOKEN),
     })
     if (res.ok) {
       release = (await res.json()) as ReleaseData
@@ -225,7 +236,50 @@ app.get('/download', async (c) => {
   } catch {
   }
 
-  return c.html(downloadPage(release, os))
+  return c.html(downloadPage(release, os, getOrigin(c.req.raw)))
+})
+
+app.get('/download/:filename', async (c) => {
+  const env = getEnv(c)
+  const filename = c.req.param('filename')
+
+  if (!env.GITHUB_TOKEN) {
+    return c.text('Not configured', 500)
+  }
+
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+      headers: githubHeaders(env.GITHUB_TOKEN),
+    })
+    if (!res.ok) return c.text('Release not found', 404)
+
+    const release = (await res.json()) as ReleaseData
+    const asset = release.assets.find(a => a.name === filename)
+    if (!asset) return c.text('Asset not found', 404)
+
+    const assetRes = await fetch(asset.browser_download_url, {
+      headers: {
+        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
+        Accept: 'application/octet-stream',
+        'User-Agent': 'auto-remote-web',
+      },
+      redirect: 'follow',
+    })
+
+    if (!assetRes.ok || !assetRes.body) return c.text('Download failed', 502)
+
+    return new Response(assetRes.body, {
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'Content-Disposition': `attachment; filename="${filename}"`,
+        ...(assetRes.headers.get('content-length')
+          ? { 'Content-Length': assetRes.headers.get('content-length')! }
+          : {}),
+      },
+    })
+  } catch {
+    return c.text('Download failed', 500)
+  }
 })
 
 // Slack OAuth — scopes kept in sync with src/main/oauth.ts
