@@ -1,0 +1,40 @@
+{
+  "name": "work-log-automation",
+  "version": "0.1.0",
+  "description": "Remote.com Time Tracking 업무내용 자동 입력 도구",
+  "type": "module",
+  "main": "out/main/index.cjs",
+  "scripts": {
+    "dev": "electron-vite dev",
+    "build": "electron-vite build",
+    "dist": "electron-vite build && electron-builder",
+    "preview": "electron-vite preview",
+    "cli": "bun run src/cli/index.ts",
+    "lint": "eslint src --ext .ts,.tsx"
+  },
+  "dependencies": {
+    "@slack/web-api": "^7.9.1",
+    "playwright": "^1.58.2",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^3.4.0"
+  },
+  "devDependencies": {
+    "@electron-toolkit/preload": "^3.0.2",
+    "@electron-toolkit/utils": "^4.0.0",
+    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.4",
+    "autoprefixer": "^10.4.24",
+    "electron": "^40.4.0",
+    "electron-builder": "^26.0.0",
+    "electron-vite": "^5.0.0",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.1"
+  }
+}

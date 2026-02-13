@@ -1,0 +1,20 @@
+{
+  "git": {
+    "repos": [
+      "/path/to/your/repo1",
+      "/path/to/your/repo2"
+    ]
+  },
+  "ai": {
+    "model": "openai/gpt-4o-mini",
+    "language": "ko"
+  },
+  "remote": {
+    "employmentId": "your-employment-id",
+    "timezone": "Asia/Seoul"
+  },
+  "general": {
+    "headless": true,
+    "slowMo": 0
+  }
+}

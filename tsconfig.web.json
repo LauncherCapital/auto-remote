@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "jsx": "react-jsx",
+    "outDir": "./out/renderer",
+    "rootDir": "./src/renderer/src"
+  },
+  "include": [
+    "src/renderer/src/**/*",
+    "src/preload/index.d.ts"
+  ]
+}
