@@ -220,6 +220,20 @@ function githubHeaders(token: string): Record<string, string> {
   return headers
 }
 
+app.get('/api/debug/release', async (c) => {
+  const env = getEnv(c)
+  const tokenPreview = env.GITHUB_TOKEN ? `${env.GITHUB_TOKEN.slice(0, 6)}...` : '(empty)'
+  try {
+    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
+      headers: githubHeaders(env.GITHUB_TOKEN),
+    })
+    const body = await res.text()
+    return c.json({ status: res.status, tokenPreview, body: JSON.parse(body) })
+  } catch (err) {
+    return c.json({ error: String(err), tokenPreview })
+  }
+})
+
 app.get('/download', async (c) => {
   const env = getEnv(c)
   const ua = c.req.header('user-agent') ?? ''
