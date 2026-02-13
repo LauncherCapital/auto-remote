@@ -1,6 +1,5 @@
 import { Hono } from 'hono'
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie'
-import { handle } from 'hono/vercel'
 
 type Env = {
   SLACK_CLIENT_ID: string
@@ -343,4 +342,4 @@ app.get('/api/github/callback', async (c) => {
   }
 })
 
-export default handle(app)
+export default app
