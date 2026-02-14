@@ -33,7 +33,7 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Build & Package
-        run: bun run dist
+        run: npx electron-vite build && npx electron-builder --publish never
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
