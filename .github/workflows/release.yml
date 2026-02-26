@@ -29,8 +29,17 @@ jobs:
         with:
           node-version: 20
 
-      - name: Install dependencies
+      - name: Install dependencies (macOS)
+        if: matrix.os == 'macos-latest'
         run: bun install --frozen-lockfile
+
+      - name: Install dependencies (Windows)
+        if: matrix.os == 'windows-latest'
+        env:
+          ELECTRON_GET_USE_PROXY: true
+          GLOBAL_AGENT_HTTPS_PROXY: ''
+        run: npm install
+        shell: pwsh
 
       - name: Build & Package
         run: npx electron-vite build && npx electron-builder --publish never
