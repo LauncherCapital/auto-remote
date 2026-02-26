@@ -20,3 +20,7 @@ win:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+protocols:
+  name: autoremote
+  schemes:
+    - autoremote

@@ -1,11 +1,32 @@
 import type { GitCommit, GitHubConfig } from '../types'
 
+// GitHub API가 반환하는 커밋 응답 타입
+interface GitHubCommitResponse {
+  sha: string
+  commit: {
+    message: string
+    author: {
+      name: string
+      email: string  // 실제 git commit에 박힌 이메일 (계정 인증 여부 무관)
+      date: string
+    }
+  }
+  author: {           // GitHub 계정 (이메일이 계정과 연결 안 된 경우 null)
+    login: string
+  } | null
+}
+
 export async function collectGitCommits(
   config: GitHubConfig,
   date: string
 ): Promise<GitCommit[]> {
   if (!config.accessToken) {
     console.warn('GitHub access token is empty, skipping commit collection')
+    return []
+  }
+
+  if (!config.username && !config.authorEmail) {
+    console.warn('GitHub username/authorEmail not configured, skipping commit collection')
     return []
   }
 
@@ -18,7 +39,14 @@ export async function collectGitCommits(
       const url = new URL(
         `https://api.github.com/repos/${repo.owner}/${repo.name}/commits`
       )
-      url.searchParams.set('author', config.username)
+
+      // authorEmail이 있으면 API 필터 없이 전체 조회 후 클라이언트 필터링
+      // → git commit에 직접 박힌 이메일 기준이므로 username 불일치 커밋도 포함
+      // authorEmail이 없으면 GitHub username으로 API 수준 필터링 (기존 방식)
+      if (!config.authorEmail && config.username) {
+        url.searchParams.set('author', config.username)
+      }
+
       url.searchParams.set('since', since)
       url.searchParams.set('until', until)
       url.searchParams.set('per_page', '100')
@@ -38,17 +66,16 @@ export async function collectGitCommits(
         continue
       }
 
-      const commits = (await response.json()) as Array<{
-        sha: string
-        commit: {
-          message: string
-          author: {
-            date: string
-          }
-        }
-      }>
+      const commits = (await response.json()) as GitHubCommitResponse[]
 
       for (const commit of commits) {
+        // 이메일 기반 필터링: 실제 커밋에 박힌 이메일로 판단
+        if (config.authorEmail) {
+          const commitEmail = commit.commit.author.email.toLowerCase()
+          const targetEmail = config.authorEmail.toLowerCase()
+          if (commitEmail !== targetEmail) continue
+        }
+
         allCommits.push({
           hash: commit.sha,
           message: commit.commit.message,

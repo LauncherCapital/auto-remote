@@ -173,7 +173,7 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
     saveJsonConfig({ github: { repos } })
   })
 
-  ipcMain.handle('run:now', async () => {
+  ipcMain.handle('run:now', async (_event, weekStart?: string) => {
     if (isRunning) throw new Error('Already running')
     isRunning = true
     runAbortController = new AbortController()
@@ -184,14 +184,28 @@ export function registerIpcHandlers(mainWindow: BrowserWindow): void {
 
     try {
       const config = loadConfig()
-      const today = new Date().toISOString().slice(0, 10)
-      const d = new Date(today)
-      const day = d.getDay()
-      const diff = d.getDate() - day + (day === 0 ? -6 : 1)
-      d.setDate(diff)
-      const weekStart = d.toISOString().slice(0, 10)
+      let targetWeekStart = weekStart
+      if (!targetWeekStart) {
+        const today = new Date().toISOString().slice(0, 10)
+        const d = new Date(today)
+        const day = d.getDay()
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1)
+        d.setDate(diff)
+        targetWeekStart = d.toISOString().slice(0, 10)
+      }
 
-      await executeFullPipeline(weekStart, config, sendProgress)
+      await executeFullPipeline(targetWeekStart, config, sendProgress, runAbortController!.signal)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        sendProgress({
+          status: 'idle',
+          totalDays: 0,
+          completedDays: 0,
+          logs: [{ timestamp: new Date(), level: 'warn', message: 'Automation cancelled by user' }],
+        })
+        return
+      }
+      throw error
     } finally {
       isRunning = false
       runAbortController = null

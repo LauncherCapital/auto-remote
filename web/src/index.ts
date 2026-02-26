@@ -117,6 +117,53 @@ function copy(id) {
 </body></html>`
 }
 
+function deepLinkPage(provider: string, deepLink: string, data: Record<string, string>): string {
+  const entries = Object.entries(data)
+    .map(
+      ([key, value]) => `
+      <div class="token-box">
+        <div class="token-label">${escapeHtml(key)}</div>
+        <div class="token-value" id="${escapeHtml(key)}">${escapeHtml(value)}</div>
+        <button class="copy-btn" onclick="copy('${escapeHtml(key)}')">Copy</button>
+      </div>`
+    )
+    .join('')
+
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(provider)} Connected</title><style>${PAGE_STYLE}
+  #fallback { display: none; margin-top: 1.5rem; }
+</style></head>
+<body><div class="container">
+  <div class="success">&check;</div>
+  <h1>${escapeHtml(provider)} Connected</h1>
+  <p class="sub" id="status">앱으로 돌아가는 중...</p>
+  <div id="fallback">
+    <p class="sub" style="margin-bottom:0.75rem;">앱이 열리지 않으면 아래 값을 복사하세요.</p>
+    ${entries}
+  </div>
+  <p class="info" id="hint"></p>
+</div>
+<script>
+function copy(id) {
+  var el = document.getElementById(id);
+  if (!el) return;
+  navigator.clipboard.writeText(el.textContent).then(function() {
+    var btn = el.parentElement.querySelector('.copy-btn');
+    if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy'; }, 1500); }
+  });
+}
+// Try to open the app via deep link
+try { window.location = ${JSON.stringify(deepLink)}; } catch(e) {}
+// Show fallback after 2.5s if app didn't open
+setTimeout(function() {
+  document.getElementById('status').textContent = '앱이 자동으로 열리지 않나요?';
+  document.getElementById('fallback').style.display = 'block';
+  document.getElementById('hint').textContent = '값을 복사한 후 앱 설정에 붙여넣으세요.';
+}, 2500);
+</script>
+</body></html>`
+}
+
 function errorPage(provider: string, message: string): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>${escapeHtml(provider)} Error</title><style>${PAGE_STYLE}</style></head>
@@ -388,13 +435,12 @@ app.get('/api/slack/callback', async (c) => {
     } catch {
     }
 
-    return c.html(
-      successPage('Slack', {
-        SLACK_USER_TOKEN: userToken,
-        SLACK_USER_ID: userId,
-        ...(userName ? { SLACK_USER_NAME: userName } : {}),
-      })
-    )
+    const deepLink = `autoremote://oauth/slack?token=${encodeURIComponent(userToken)}&userId=${encodeURIComponent(userId)}&userName=${encodeURIComponent(userName)}`
+    return c.html(deepLinkPage('Slack', deepLink, {
+      SLACK_USER_TOKEN: userToken,
+      SLACK_USER_ID: userId,
+      ...(userName ? { SLACK_USER_NAME: userName } : {}),
+    }))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return c.html(errorPage('Slack', message), 500)
@@ -499,12 +545,11 @@ app.get('/api/github/callback', async (c) => {
     } catch {
     }
 
-    return c.html(
-      successPage('GitHub', {
-        GITHUB_ACCESS_TOKEN: accessToken,
-        ...(username ? { GITHUB_USERNAME: username } : {}),
-      })
-    )
+    const deepLink = `autoremote://oauth/github?token=${encodeURIComponent(accessToken)}&username=${encodeURIComponent(username)}`
+    return c.html(deepLinkPage('GitHub', deepLink, {
+      GITHUB_ACCESS_TOKEN: accessToken,
+      ...(username ? { GITHUB_USERNAME: username } : {}),
+    }))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return c.html(errorPage('GitHub', message), 500)

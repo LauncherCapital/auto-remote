@@ -32,7 +32,8 @@ const DAY_NAMES = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 export async function collectWeekData(
   weekStart: string,
   config: AppConfig,
-  onProgress?: (progress: AutomationProgress) => void
+  onProgress?: (progress: AutomationProgress) => void,
+  signal?: AbortSignal
 ): Promise<WeeklyWorkData> {
   const dates = getWeekDates(weekStart)
   const logs: LogEntry[] = []
@@ -52,6 +53,8 @@ export async function collectWeekData(
   const days: DailyWorkData[] = []
 
   for (const date of dates) {
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+
     log('info', `Collecting data for ${date}`)
 
     const [commits, slackMessages] = await Promise.all([
@@ -76,7 +79,8 @@ export async function collectWeekData(
 export async function generateSummary(
   data: WeeklyWorkData,
   config: AppConfig,
-  onProgress?: (progress: AutomationProgress) => void
+  onProgress?: (progress: AutomationProgress) => void,
+  signal?: AbortSignal
 ): Promise<WeeklySummary> {
   const logs: LogEntry[] = []
 
@@ -95,6 +99,8 @@ export async function generateSummary(
   const summaries: DailySummary[] = []
 
   for (const day of data.days) {
+    if (signal?.aborted) throw new DOMException('Cancelled', 'AbortError')
+
     log('info', `Summarizing ${day.date}`)
     const summary = await summarizeDay(config.ai, day)
     summaries.push(summary)
@@ -111,24 +117,27 @@ export async function generateSummary(
 export async function executeAutomation(
   summary: WeeklySummary,
   config: AppConfig,
-  onProgress?: (progress: AutomationProgress) => void
+  onProgress?: (progress: AutomationProgress) => void,
+  signal?: AbortSignal
 ): Promise<void> {
   await automateTimesheet(
     summary,
     config.remote,
     config.general,
     getAuthStatePath(),
-    onProgress
+    onProgress,
+    signal
   )
 }
 
 export async function executeFullPipeline(
   weekStart: string,
   config: AppConfig,
-  onProgress?: (progress: AutomationProgress) => void
+  onProgress?: (progress: AutomationProgress) => void,
+  signal?: AbortSignal
 ): Promise<WeeklySummary> {
-  const weekData = await collectWeekData(weekStart, config, onProgress)
-  const summary = await generateSummary(weekData, config, onProgress)
-  await executeAutomation(summary, config, onProgress)
+  const weekData = await collectWeekData(weekStart, config, onProgress, signal)
+  const summary = await generateSummary(weekData, config, onProgress, signal)
+  await executeAutomation(summary, config, onProgress, signal)
   return summary
 }

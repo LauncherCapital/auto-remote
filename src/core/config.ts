@@ -39,19 +39,20 @@ export function loadConfig(): AppConfig {
 
   return {
     remote: {
-      email: env.REMOTE_EMAIL ?? '',
-      password: env.REMOTE_PASSWORD ?? '',
+      email: (json.remote?.email as string) ?? env.REMOTE_EMAIL ?? '',
+      password: (json.remote?.password as string) ?? env.REMOTE_PASSWORD ?? '',
       employmentId: (json.remote?.employmentId as string) ?? '',
       timezone: (json.remote?.timezone as string) ?? 'Asia/Seoul',
     },
     slack: {
-      userToken: env.SLACK_USER_TOKEN ?? '',
-      userId: env.SLACK_USER_ID ?? '',
-      userName: env.SLACK_USER_NAME ?? '',
+      userToken: (json.slack?.userToken as string) ?? env.SLACK_USER_TOKEN ?? '',
+      userId: (json.slack?.userId as string) ?? env.SLACK_USER_ID ?? '',
+      userName: (json.slack?.userName as string) ?? env.SLACK_USER_NAME ?? '',
     },
     github: {
-      accessToken: env.GITHUB_ACCESS_TOKEN ?? '',
-      username: env.GITHUB_USERNAME ?? '',
+      accessToken: (json.github?.accessToken as string) ?? env.GITHUB_ACCESS_TOKEN ?? '',
+      username: (json.github?.username as string) ?? env.GITHUB_USERNAME ?? '',
+      authorEmail: (json.github?.authorEmail as string) ?? env.GITHUB_AUTHOR_EMAIL ?? undefined,
       repos: (json.github?.repos as GitHubRepo[]) ?? (json.git?.repos as GitHubRepo[]) ?? [],
     },
     ai: {

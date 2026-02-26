@@ -19,7 +19,7 @@ const api = {
 
   getIntegrationState: () => ipcRenderer.invoke('integration:state'),
 
-  runNow: () => ipcRenderer.invoke('run:now'),
+  runNow: (weekStart?: string) => ipcRenderer.invoke('run:now', weekStart),
   cancelRun: () => ipcRenderer.invoke('run:cancel'),
 
   getSchedulerStatus: () => ipcRenderer.invoke('scheduler:status'),
@@ -45,8 +45,7 @@ if (process.contextIsolated) {
     console.error(error)
   }
 } else {
-  // @ts-expect-error define in dts
-  window.electron = electronAPI
-  // @ts-expect-error define in dts
-  window.api = api
+  const w = globalThis as Record<string, unknown>
+  w.electron = electronAPI
+  w.api = api
 }

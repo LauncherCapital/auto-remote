@@ -1,0 +1,254 @@
+{
+  "version": "1.0.0",
+  "lastScanned": 1772093681397,
+  "projectRoot": "/Users/jaesong/Documents/my/auto-remote",
+  "techStack": {
+    "languages": [
+      {
+        "name": "JavaScript/TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "package.json"
+        ]
+      },
+      {
+        "name": "TypeScript",
+        "version": null,
+        "confidence": "high",
+        "markers": [
+          "tsconfig.json"
+        ]
+      }
+    ],
+    "frameworks": [
+      {
+        "name": "playwright",
+        "version": "1.58.2",
+        "category": "testing"
+      },
+      {
+        "name": "react",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "react-dom",
+        "version": "19.2.4",
+        "category": "frontend"
+      },
+      {
+        "name": "vite",
+        "version": "7.3.1",
+        "category": "build"
+      }
+    ],
+    "packageManager": "npm",
+    "runtime": null
+  },
+  "build": {
+    "buildCommand": "npm run build",
+    "testCommand": null,
+    "lintCommand": "npm run lint",
+    "devCommand": "npm run dev",
+    "scripts": {
+      "dev": "electron-vite dev",
+      "build": "electron-vite build",
+      "dist": "electron-vite build && electron-builder",
+      "preview": "electron-vite preview",
+      "cli": "bun run src/cli/index.ts",
+      "lint": "eslint src --ext .ts,.tsx"
+    }
+  },
+  "conventions": {
+    "namingStyle": null,
+    "importStyle": null,
+    "testPattern": null,
+    "fileOrganization": null
+  },
+  "structure": {
+    "isMonorepo": false,
+    "workspaces": [],
+    "mainDirectories": [
+      "src"
+    ],
+    "gitBranches": {
+      "defaultBranch": "main",
+      "branchingStrategy": null
+    }
+  },
+  "customNotes": [],
+  "directoryMap": {
+    "out": {
+      "path": "out",
+      "purpose": "Build output",
+      "fileCount": 0,
+      "lastAccessed": 1772093681365,
+      "keyFiles": []
+    },
+    "src": {
+      "path": "src",
+      "purpose": "Source code",
+      "fileCount": 0,
+      "lastAccessed": 1772093681365,
+      "keyFiles": []
+    },
+    "web": {
+      "path": "web",
+      "purpose": null,
+      "fileCount": 4,
+      "lastAccessed": 1772093681375,
+      "keyFiles": [
+        "bun.lock",
+        "package.json",
+        "tsconfig.json",
+        "vercel.json"
+      ]
+    },
+    "web/node_modules": {
+      "path": "web/node_modules",
+      "purpose": "Dependencies",
+      "fileCount": 0,
+      "lastAccessed": 1772093681376,
+      "keyFiles": []
+    },
+    "web/src": {
+      "path": "web/src",
+      "purpose": "Source code",
+      "fileCount": 1,
+      "lastAccessed": 1772093681376,
+      "keyFiles": [
+        "index.ts"
+      ]
+    }
+  },
+  "hotPaths": [
+    {
+      "path": "src/renderer/src/App.tsx",
+      "accessCount": 5,
+      "lastAccessed": 1772095851666,
+      "type": "file"
+    },
+    {
+      "path": "src/core/automation/selectors.ts",
+      "accessCount": 4,
+      "lastAccessed": 1772095731611,
+      "type": "file"
+    },
+    {
+      "path": "src/core/automation/remote.ts",
+      "accessCount": 4,
+      "lastAccessed": 1772095810423,
+      "type": "file"
+    },
+    {
+      "path": "src/main/ipc.ts",
+      "accessCount": 4,
+      "lastAccessed": 1772095823882,
+      "type": "file"
+    },
+    {
+      "path": "src/main/index.ts",
+      "accessCount": 4,
+      "lastAccessed": 1772096195937,
+      "type": "file"
+    },
+    {
+      "path": "web/src/index.ts",
+      "accessCount": 4,
+      "lastAccessed": 1772096219275,
+      "type": "file"
+    },
+    {
+      "path": "src/main/scheduler.ts",
+      "accessCount": 3,
+      "lastAccessed": 1772095453723,
+      "type": "file"
+    },
+    {
+      "path": "src/core/orchestrator.ts",
+      "accessCount": 3,
+      "lastAccessed": 1772095611759,
+      "type": "file"
+    },
+    {
+      "path": "src/preload/index.ts",
+      "accessCount": 3,
+      "lastAccessed": 1772095827253,
+      "type": "file"
+    },
+    {
+      "path": "src/main/oauth.ts",
+      "accessCount": 3,
+      "lastAccessed": 1772096179429,
+      "type": "file"
+    },
+    {
+      "path": "src/core/types.ts",
+      "accessCount": 2,
+      "lastAccessed": 1772095554186,
+      "type": "file"
+    },
+    {
+      "path": "package.json",
+      "accessCount": 1,
+      "lastAccessed": 1772093706882,
+      "type": "file"
+    },
+    {
+      "path": "src/core/config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093788318,
+      "type": "file"
+    },
+    {
+      "path": "src/core/collectors/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093788653,
+      "type": "file"
+    },
+    {
+      "path": "src/core/collectors/git.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093789101,
+      "type": "file"
+    },
+    {
+      "path": "src/core/collectors/slack.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093789105,
+      "type": "file"
+    },
+    {
+      "path": "src/core/automation/auth.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093792783,
+      "type": "file"
+    },
+    {
+      "path": "src/core/ai/prompts.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093793351,
+      "type": "file"
+    },
+    {
+      "path": "src/core/ai/summarizer.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093793539,
+      "type": "file"
+    },
+    {
+      "path": "src/cli/index.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772093800937,
+      "type": "file"
+    },
+    {
+      "path": ".env",
+      "accessCount": 1,
+      "lastAccessed": 1772094551178,
+      "type": "file"
+    }
+  ],
+  "userDirectives": []
+}

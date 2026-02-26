@@ -29,6 +29,7 @@ export interface SlackConfig {
 export interface GitHubConfig {
   accessToken: string
   username: string
+  authorEmail?: string  // 커밋 작성자 이메일 (username과 다를 때 사용)
   repos: GitHubRepo[]
 }
 
@@ -158,6 +159,7 @@ export interface SlackOAuthResult extends OAuthResult {
 
 export interface GitHubOAuthResult extends OAuthResult {
   username?: string
+  authorEmail?: string  // GitHub 계정에 등록된 primary 이메일
 }
 
 export interface GitHubRepoInfo {

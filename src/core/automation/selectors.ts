@@ -28,6 +28,9 @@ export const SELECTORS = {
   // Entry buttons (parameterized)
   editEntryButton: (timeRange: string) =>
     `button:has-text("Edit time entry for ${timeRange}")`,
+
+  // Add hours button (shown when no entry exists for a slot)
+  addHoursButton: 'button:has-text("Add hours")',
 } as const
 
 export const TIMEOUTS = {

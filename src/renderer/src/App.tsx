@@ -456,6 +456,28 @@ function IntegrationsStep({
   )
 }
 
+function getWeekOptions(): { label: string; value: string }[] {
+  const options: { label: string; value: string }[] = []
+  const now = new Date()
+  const currentDay = now.getDay()
+  const mondayOffset = currentDay === 0 ? -6 : 1 - currentDay
+  const currentMonday = new Date(now)
+  currentMonday.setDate(now.getDate() + mondayOffset)
+  currentMonday.setHours(0, 0, 0, 0)
+
+  for (let i = 0; i < 6; i++) {
+    const monday = new Date(currentMonday)
+    monday.setDate(currentMonday.getDate() - i * 7)
+    const friday = new Date(monday)
+    friday.setDate(monday.getDate() + 4)
+    const mondayStr = monday.toISOString().slice(0, 10)
+    const fridayStr = friday.toISOString().slice(0, 10)
+    const label = i === 0 ? `이번 주 (${mondayStr} ~ ${fridayStr})` : `${i}주 전 (${mondayStr} ~ ${fridayStr})`
+    options.push({ label, value: mondayStr })
+  }
+  return options
+}
+
 function DashboardStep({
   config,
   progress,
@@ -469,6 +491,8 @@ function DashboardStep({
   onSave: (partial: Partial<AppConfig>) => Promise<AppConfig>
   onEditAccounts: () => void
 }) {
+  const weekOptions = getWeekOptions()
+  const [selectedWeek, setSelectedWeek] = useState(weekOptions[0].value)
   const [runningNow, setRunningNow] = useState(false)
   const [schedulerStatus, setSchedulerStatus] = useState<{ enabled: boolean; nextRun?: string }>({ enabled: false })
 
@@ -483,7 +507,7 @@ function DashboardStep({
   const handleRunNow = async () => {
     setRunningNow(true)
     try {
-      await window.api.runNow()
+      await window.api.runNow(selectedWeek)
     } catch {
     } finally {
       setRunningNow(false)
@@ -546,6 +570,19 @@ function DashboardStep({
 
       <div className="space-y-2">
         <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Manual</div>
+        <div>
+          <label className="block text-xs text-slate-400 mb-1">처리할 주 선택</label>
+          <select
+            value={selectedWeek}
+            onChange={(e) => setSelectedWeek(e.target.value)}
+            disabled={isRunning}
+            className="w-full bg-slate-700 border border-slate-600 text-slate-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {weekOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </div>
         {isRunning ? (
           <button onClick={() => window.api.cancelRun()} className="w-full bg-red-600 hover:bg-red-700 text-white rounded-lg px-4 py-2.5 text-sm font-medium transition-colors">
             Cancel
