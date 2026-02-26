@@ -49,12 +49,15 @@ jobs:
         env:
           ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
 
-      - name: Build & Package
+      - name: Build & Package (macOS)
+        if: matrix.os == 'macos-latest'
+        run: npx electron-vite build && npx electron-builder --publish never
+
+      - name: Build & Package (Windows)
+        if: matrix.os == 'windows-latest'
         run: npx electron-vite build && npx electron-builder --publish never
         env:
-          # 공식 GitHub에서 다운로드하도록 명시 (npmmirror 우선순위 차단)
-          ELECTRON_MIRROR: https://github.com/electron/electron/releases/download/v
-          ELECTRON_BUILDER_BINARIES_MIRROR: https://github.com/electron-userland/electron-builder-binaries/releases/download/
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
