@@ -5,6 +5,8 @@ directories:
   output: dist
 files:
   - out/**/*
+  - node_modules/**/*
+  - package.json
 mac:
   target:
     - target: dmg
