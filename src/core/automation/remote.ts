@@ -129,19 +129,8 @@ export async function automateTimesheet(
       emitProgress('automating', { completedDays })
     }
 
-    // Resubmit timesheet
-    log('info', 'Resubmitting timesheet')
-    const resubmitButton = page.locator(SELECTORS.resubmitButton)
-    if (await resubmitButton.isVisible({ timeout: 3000 }).catch(() => false)) {
-      await resubmitButton.click()
-      const resubmitHoursButton = page.locator(SELECTORS.resubmitHoursButton)
-      await resubmitHoursButton.waitFor({ state: 'visible', timeout: TIMEOUTS.modalAppear })
-      await resubmitHoursButton.click()
-      await page.waitForTimeout(2000)
-      log('success', 'Timesheet resubmitted')
-    } else {
-      log('warn', 'No resubmit button found - timesheet may not need resubmission')
-    }
+    // 제출은 사람이 직접 합니다 — 자동 재제출 없음
+    log('success', '업무일지 작성 완료. Remote.com에서 직접 제출하세요.')
 
     await context.storageState({ path: authStatePath })
     await context.close()
