@@ -51,6 +51,9 @@ jobs:
 
       - name: Build & Package
         run: npx electron-vite build && npx electron-builder --publish never
+        env:
+          # electron-builder 보조 바이너리(dmg-builder 등)는 공식 GitHub에서 받도록 미러 차단
+          ELECTRON_BUILDER_BINARIES_MIRROR: ''
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
