@@ -37,7 +37,7 @@ jobs:
           path: |
             ~/AppData/Local/electron/Cache
             ~/.cache/electron
-          key: electron-${{ runner.os }}-${{ hashFiles('package.json') }}
+          key: electron-${{ runner.os }}-v3-${{ hashFiles('package.json') }}
 
       - name: Install dependencies (macOS)
         if: matrix.os == 'macos-latest'
@@ -52,8 +52,9 @@ jobs:
       - name: Build & Package
         run: npx electron-vite build && npx electron-builder --publish never
         env:
-          # electron-builder 보조 바이너리(dmg-builder 등)는 공식 GitHub에서 받도록 미러 차단
-          ELECTRON_BUILDER_BINARIES_MIRROR: ''
+          # 공식 GitHub에서 다운로드하도록 명시 (npmmirror 우선순위 차단)
+          ELECTRON_MIRROR: https://github.com/electron/electron/releases/download/v
+          ELECTRON_BUILDER_BINARIES_MIRROR: https://github.com/electron-userland/electron-builder-binaries/releases/download/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
