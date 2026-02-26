@@ -9,8 +9,11 @@
     "build": "electron-vite build",
     "dist": "electron-vite build && electron-builder",
     "preview": "electron-vite preview",
-    "cli": "bun run src/cli/index.ts",
+    "cli": "npx tsx src/cli/index.ts",
     "lint": "eslint src --ext .ts,.tsx"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": ["electron", "electron-winstaller", "esbuild"]
   },
   "dependencies": {
     "@slack/web-api": "^7.9.1",
