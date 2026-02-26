@@ -31,11 +31,23 @@ jobs:
         with:
           version: latest
 
+      - name: Cache Electron binary
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/AppData/Local/electron/Cache
+            ~/.cache/electron
+          key: electron-${{ runner.os }}-${{ hashFiles('package.json') }}
+
       - name: Install dependencies
         run: pnpm install
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
 
       - name: Build & Package
         run: npx electron-vite build && npx electron-builder --publish never
+        env:
+          ELECTRON_MIRROR: https://npmmirror.com/mirrors/electron/
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
