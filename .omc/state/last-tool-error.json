@@ -1,7 +1,7 @@
 {
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"/Users/jaesong/.claude/projects/-Users-jaesong-Documents-my-auto-remote/memory/MEMORY.md\"}",
-  "error": "File does not exist. Note: your current working directory is /Users/jaesong/Documents/my/auto-remote.",
-  "timestamp": "2026-02-26T08:15:07.607Z",
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"node /Users/jaesong/Documents/my/auto-remote/dist/cli/index.js help 2>&1\",\"description\":\"Test CLI help command\"}",
+  "error": "Exit code 1\nfile:///Users/jaesong/Documents/my/auto-remote/dist/cli/index.js:2\n#!/usr/bin/env node\n^\n\nSyntaxError: Invalid or unexpected token\n    at compileSourceTextModule (node:internal/modules/esm/utils:305:16)\n    at ModuleLoader.moduleStrategy (node:internal/modules/esm/translators:111:18)\n    at #translate (node:internal/modules/esm/loader:467:20)\n    at afterLoad (node:internal/modules/esm/loader:523:29)\n    at ModuleLoader.loadAndTranslate (node:internal/modules/esm/loader:528:12)\n    a...",
+  "timestamp": "2026-03-05T10:24:24.586Z",
   "retry_count": 1
 }

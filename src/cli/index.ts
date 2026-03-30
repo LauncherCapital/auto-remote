@@ -3,54 +3,16 @@ import {
   collectWeekData,
   generateSummary,
   executeAutomation,
-  executeFullPipeline,
 } from '../core/orchestrator'
 import type { AutomationProgress } from '../core/types'
+import { runSetup } from './setup'
 
-function parseArgs(): { weekStart: string; previewOnly: boolean; autoRun: boolean } {
-  const args = process.argv.slice(2)
-  let weekStart = ''
-  let previewOnly = false
-  let autoRun = false
-
-  for (let i = 0; i < args.length; i++) {
-    if ((args[i] === '--week' || args[i] === '-w') && args[i + 1]) {
-      weekStart = args[i + 1]
-      i++
-    } else if (args[i] === '--preview') {
-      previewOnly = true
-    } else if (args[i] === '--auto') {
-      autoRun = true
-    } else if (args[i] === '--help' || args[i] === '-h') {
-      printUsage()
-      process.exit(0)
-    }
-  }
-
-  if (!weekStart) {
-    const today = new Date()
-    const dayOfWeek = today.getDay()
-    const monday = new Date(today)
-    monday.setDate(today.getDate() - ((dayOfWeek + 6) % 7))
-    weekStart = monday.toISOString().split('T')[0]
-  }
-
-  return { weekStart, previewOnly, autoRun }
-}
-
-function printUsage(): void {
-  console.log(`
-업무일지 자동화 CLI
-
-Usage:
-  bun run src/cli/index.ts [options]
-
-Options:
-  --week, -w <YYYY-MM-DD>  Week start date (Monday). Default: current week
-  --preview                Only collect data and generate summaries (no automation)
-  --auto                   Run full pipeline without confirmation
-  --help, -h               Show this help
-  `)
+function getCurrentMonday(): string {
+  const today = new Date()
+  const day = today.getDay()
+  const monday = new Date(today)
+  monday.setDate(today.getDate() - ((day + 6) % 7))
+  return monday.toISOString().split('T')[0]
 }
 
 function onProgress(progress: AutomationProgress): void {
@@ -61,52 +23,115 @@ function onProgress(progress: AutomationProgress): void {
   }
 }
 
-async function main(): Promise<void> {
-  console.log('업무일지 자동화 CLI')
-  console.log('==================\n')
+function printHelp(): void {
+  console.log(`
+업무일지 자동화 CLI
 
-  const { weekStart, previewOnly, autoRun } = parseArgs()
+사용법:
+  auto-remote <command> [options]
+
+Commands:
+  setup                   초기 설정 (인터랙티브)
+  run [--week YYYY-MM-DD] 자동화 실행 (기본: 이번 주)
+  preview [--week DATE]   미리보기만 (Remote.com 접속 없음)
+  status                  현재 설정 및 연결 상태
+  help                    이 도움말
+
+Options:
+  --week, -w <YYYY-MM-DD>  대상 주의 월요일 날짜
+
+예시:
+  auto-remote setup
+  auto-remote run
+  auto-remote run --week 2025-01-06
+  auto-remote preview
+`)
+}
+
+function printStatus(): void {
+  const config = loadConfig()
+  console.log('현재 설정 상태\n')
+  console.log(`Remote.com: ${config.remote.email ? `✓ ${config.remote.email}` : '✗ 미설정'}`)
+  console.log(`Slack:      ${config.slack.userToken ? `✓ ${config.slack.userName || config.slack.userId}` : '✗ 미설정'}`)
+  console.log(`GitHub:     ${config.github.accessToken ? `✓ ${config.github.username} (레포 ${config.github.repos.length}개)` : '✗ 미설정'}`)
+  console.log(`AI API:     ${config.ai.openRouterApiKey ? '✓ 설정됨' : '✗ 미설정'}`)
+}
+
+async function runAutomation(weekStart: string, previewOnly: boolean): Promise<void> {
   const config = loadConfig()
 
   if (!config.remote.email || !config.remote.password) {
-    console.error('Remote.com credentials not configured. Set REMOTE_EMAIL and REMOTE_PASSWORD in .env')
+    console.error('✗ Remote.com 계정이 설정되지 않았습니다.')
+    console.error('  auto-remote setup 을 먼저 실행하세요.')
     process.exit(1)
   }
 
-  console.log(`Week: ${weekStart}\n`)
-
-  if (autoRun) {
-    console.log('[Full Pipeline Mode]\n')
-    await executeFullPipeline(weekStart, config, onProgress)
-    return
-  }
-
-  console.log('[Step 1] Collecting data...\n')
-  const weekData = await collectWeekData(weekStart, config, onProgress)
-
-  console.log('\n[Step 2] Generating summaries...\n')
-  const summary = await generateSummary(weekData, config, onProgress)
-
-  console.log('\n--- Preview ---\n')
-  for (const day of summary.days) {
-    console.log(`${day.date}:`)
-    console.log(`  AM: ${day.amNotes}`)
-    console.log(`  PM: ${day.pmNotes}`)
-    console.log()
-  }
+  console.log(`대상 주: ${weekStart}\n`)
 
   if (previewOnly) {
-    console.log('Preview mode - skipping automation.')
+    console.log('[1/2] 데이터 수집 중...')
+    const weekData = await collectWeekData(weekStart, config, onProgress)
+    console.log('\n[2/2] AI 요약 생성 중...')
+    const summary = await generateSummary(weekData, config, onProgress)
+    console.log('\n--- 미리보기 ---\n')
+    for (const day of summary.days) {
+      console.log(`${day.date}:`)
+      console.log(`  오전: ${day.amNotes || '(내용 없음)'}`)
+      console.log(`  오후: ${day.pmNotes || '(내용 없음)'}`)
+      console.log()
+    }
     return
   }
 
-  console.log('[Step 3] Running automation...\n')
+  console.log('[1/3] 데이터 수집 중...')
+  const weekData = await collectWeekData(weekStart, config, onProgress)
+  console.log('\n[2/3] AI 요약 생성 중...')
+  const summary = await generateSummary(weekData, config, onProgress)
+  console.log('\n[3/3] Remote.com 자동 입력 중...')
   await executeAutomation(summary, config, onProgress)
+  console.log('\n✓ 완료!')
+}
 
-  console.log('\nDone!')
+async function main(): Promise<void> {
+  const args = process.argv.slice(2)
+  const command = args[0]
+
+  if (!command || command === 'help' || command === '--help' || command === '-h') {
+    printHelp()
+    return
+  }
+
+  if (command === 'setup') {
+    await runSetup()
+    return
+  }
+
+  if (command === 'status') {
+    printStatus()
+    return
+  }
+
+  if (command === 'run' || command === 'preview') {
+    const previewOnly = command === 'preview'
+    let weekStart = getCurrentMonday()
+
+    for (let i = 1; i < args.length; i++) {
+      if ((args[i] === '--week' || args[i] === '-w') && args[i + 1]) {
+        weekStart = args[i + 1]
+        i++
+      }
+    }
+
+    await runAutomation(weekStart, previewOnly)
+    return
+  }
+
+  console.error(`알 수 없는 명령어: ${command}`)
+  console.error("'auto-remote help' 로 사용법을 확인하세요.")
+  process.exit(1)
 }
 
 main().catch((error) => {
-  console.error('Fatal error:', error)
+  console.error('오류:', error instanceof Error ? error.message : error)
   process.exit(1)
 })

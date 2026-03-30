@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "lastScanned": 1772093681397,
+  "lastScanned": 1772703656488,
   "projectRoot": "/Users/jaesong/Documents/my/auto-remote",
   "techStack": {
     "languages": [
@@ -43,20 +43,20 @@
         "category": "build"
       }
     ],
-    "packageManager": "npm",
+    "packageManager": "pnpm",
     "runtime": null
   },
   "build": {
-    "buildCommand": "npm run build",
+    "buildCommand": "pnpm build",
     "testCommand": null,
-    "lintCommand": "npm run lint",
-    "devCommand": "npm run dev",
+    "lintCommand": "pnpm lint",
+    "devCommand": "pnpm dev",
     "scripts": {
       "dev": "electron-vite dev",
       "build": "electron-vite build",
       "dist": "electron-vite build && electron-builder",
       "preview": "electron-vite preview",
-      "cli": "bun run src/cli/index.ts",
+      "cli": "npx tsx src/cli/index.ts",
       "lint": "eslint src --ext .ts,.tsx"
     }
   },
@@ -83,21 +83,21 @@
       "path": "out",
       "purpose": "Build output",
       "fileCount": 0,
-      "lastAccessed": 1772093681365,
+      "lastAccessed": 1772703656466,
       "keyFiles": []
     },
     "src": {
       "path": "src",
       "purpose": "Source code",
       "fileCount": 0,
-      "lastAccessed": 1772093681365,
+      "lastAccessed": 1772703656472,
       "keyFiles": []
     },
     "web": {
       "path": "web",
       "purpose": null,
       "fileCount": 4,
-      "lastAccessed": 1772093681375,
+      "lastAccessed": 1772703656473,
       "keyFiles": [
         "bun.lock",
         "package.json",
@@ -109,14 +109,14 @@
       "path": "web/node_modules",
       "purpose": "Dependencies",
       "fileCount": 0,
-      "lastAccessed": 1772093681376,
+      "lastAccessed": 1772703656473,
       "keyFiles": []
     },
     "web/src": {
       "path": "web/src",
       "purpose": "Source code",
       "fileCount": 1,
-      "lastAccessed": 1772093681376,
+      "lastAccessed": 1772703656473,
       "keyFiles": [
         "index.ts"
       ]
@@ -124,129 +124,81 @@
   },
   "hotPaths": [
     {
-      "path": "src/renderer/src/App.tsx",
-      "accessCount": 5,
-      "lastAccessed": 1772095851666,
-      "type": "file"
-    },
-    {
-      "path": "src/core/automation/selectors.ts",
-      "accessCount": 4,
-      "lastAccessed": 1772095731611,
-      "type": "file"
-    },
-    {
-      "path": "src/core/automation/remote.ts",
-      "accessCount": 4,
-      "lastAccessed": 1772095810423,
-      "type": "file"
-    },
-    {
-      "path": "src/main/ipc.ts",
-      "accessCount": 4,
-      "lastAccessed": 1772095823882,
-      "type": "file"
-    },
-    {
-      "path": "src/main/index.ts",
-      "accessCount": 4,
-      "lastAccessed": 1772096195937,
-      "type": "file"
-    },
-    {
       "path": "web/src/index.ts",
-      "accessCount": 4,
-      "lastAccessed": 1772096219275,
-      "type": "file"
-    },
-    {
-      "path": "src/main/scheduler.ts",
-      "accessCount": 3,
-      "lastAccessed": 1772095453723,
-      "type": "file"
-    },
-    {
-      "path": "src/core/orchestrator.ts",
-      "accessCount": 3,
-      "lastAccessed": 1772095611759,
-      "type": "file"
-    },
-    {
-      "path": "src/preload/index.ts",
-      "accessCount": 3,
-      "lastAccessed": 1772095827253,
-      "type": "file"
-    },
-    {
-      "path": "src/main/oauth.ts",
-      "accessCount": 3,
-      "lastAccessed": 1772096179429,
-      "type": "file"
-    },
-    {
-      "path": "src/core/types.ts",
-      "accessCount": 2,
-      "lastAccessed": 1772095554186,
-      "type": "file"
-    },
-    {
-      "path": "package.json",
-      "accessCount": 1,
-      "lastAccessed": 1772093706882,
+      "accessCount": 7,
+      "lastAccessed": 1772706246505,
       "type": "file"
     },
     {
       "path": "src/core/config.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093788318,
+      "accessCount": 4,
+      "lastAccessed": 1772706029807,
       "type": "file"
     },
     {
-      "path": "src/core/collectors/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093788653,
-      "type": "file"
-    },
-    {
-      "path": "src/core/collectors/git.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093789101,
-      "type": "file"
-    },
-    {
-      "path": "src/core/collectors/slack.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093789105,
-      "type": "file"
-    },
-    {
-      "path": "src/core/automation/auth.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093792783,
-      "type": "file"
-    },
-    {
-      "path": "src/core/ai/prompts.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093793351,
-      "type": "file"
-    },
-    {
-      "path": "src/core/ai/summarizer.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093793539,
+      "path": "package.json",
+      "accessCount": 3,
+      "lastAccessed": 1772706141835,
       "type": "file"
     },
     {
       "path": "src/cli/index.ts",
-      "accessCount": 1,
-      "lastAccessed": 1772093800937,
+      "accessCount": 3,
+      "lastAccessed": 1772706292783,
       "type": "file"
     },
     {
-      "path": ".env",
+      "path": "web",
+      "accessCount": 2,
+      "lastAccessed": 1772704658744,
+      "type": "directory"
+    },
+    {
+      "path": "electron.vite.config.ts",
       "accessCount": 1,
-      "lastAccessed": 1772094551178,
+      "lastAccessed": 1772704648817,
+      "type": "file"
+    },
+    {
+      "path": "src/core/types.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772704653456,
+      "type": "file"
+    },
+    {
+      "path": "web/vercel.json",
+      "accessCount": 1,
+      "lastAccessed": 1772704675444,
+      "type": "file"
+    },
+    {
+      "path": "web/package.json",
+      "accessCount": 1,
+      "lastAccessed": 1772704675643,
+      "type": "file"
+    },
+    {
+      "path": "src/cli/oauth.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772706050983,
+      "type": "file"
+    },
+    {
+      "path": "src/cli/setup.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772706069658,
+      "type": "file"
+    },
+    {
+      "path": "src/cli/schedule.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772706086703,
+      "type": "file"
+    },
+    {
+      "path": "tsup.config.ts",
+      "accessCount": 1,
+      "lastAccessed": 1772706127414,
       "type": "file"
     }
   ],

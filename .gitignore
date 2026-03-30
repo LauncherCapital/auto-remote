@@ -9,3 +9,5 @@ auth.json
 web/node_modules/
 web/dist/
 .vercel/
+.vercel
+.env*.local

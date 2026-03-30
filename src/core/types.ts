@@ -10,7 +10,6 @@ export interface AppConfig {
   github: GitHubConfig
   ai: AIConfig
   general: GeneralConfig
-  scheduler: SchedulerConfig
 }
 
 export interface RemoteConfig {

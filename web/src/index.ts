@@ -29,6 +29,16 @@ function generateState(): string {
   return crypto.randomUUID()
 }
 
+/** CLI에서 전달한 callback URL인지 검증 (localhost만 허용) */
+function isValidCallbackUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url)
+    return parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1'
+  } catch {
+    return false
+  }
+}
+
 const PAGE_STYLE = `
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -47,20 +57,8 @@ const PAGE_STYLE = `
   .btn:hover { opacity: 0.9; }
   .btn-slack { background: #4A154B; }
   .btn-github { background: #24292f; }
-  .token-box {
-    background: #1e293b; border: 1px solid #334155; border-radius: 0.5rem;
-    padding: 1rem; margin-top: 1rem; text-align: left; word-break: break-all;
-  }
-  .token-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.25rem; }
-  .token-value { font-size: 0.8rem; color: #e2e8f0; font-family: monospace; }
   .success { color: #4ade80; font-size: 2.5rem; margin-bottom: 0.75rem; }
   .error { color: #f87171; font-size: 2.5rem; margin-bottom: 0.75rem; }
-  .copy-btn {
-    background: #334155; border: 1px solid #475569; color: #94a3b8; border-radius: 0.375rem;
-    padding: 0.25rem 0.75rem; font-size: 0.75rem; cursor: pointer; margin-top: 0.5rem;
-    transition: background 0.15s;
-  }
-  .copy-btn:hover { background: #475569; color: #e2e8f0; }
   .info { font-size: 0.8rem; color: #64748b; margin-top: 1.5rem; }
 `
 
@@ -68,292 +66,60 @@ function escapeHtml(str: string): string {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 }
 
-function landingPage(origin: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+function successPage(provider: string): string {
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(provider)} 연결 완료</title><style>${PAGE_STYLE}</style></head>
+<body><div class="container">
+  <div class="success">✓</div>
+  <h1>${escapeHtml(provider)} 연결 완료</h1>
+  <p class="sub">터미널로 돌아가세요.</p>
+  <p class="info">이 탭은 닫아도 됩니다.</p>
+</div></body></html>`
+}
+
+function errorPage(provider: string, message: string): string {
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>${escapeHtml(provider)} 오류</title><style>${PAGE_STYLE}</style></head>
+<body><div class="container">
+  <div class="error">✗</div>
+  <h1>연결 실패</h1>
+  <p class="sub">${escapeHtml(message)}</p>
+  <p class="info">터미널에서 다시 시도하세요.</p>
+</div></body></html>`
+}
+
+function landingPage(): string {
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>업무일지 자동화</title><style>${PAGE_STYLE}</style></head>
 <body><div class="container">
   <h1>업무일지 자동화</h1>
   <p class="sub">Remote.com Time Tracking 업무내용 자동 입력 도구</p>
-  <a href="${origin}/download" class="btn" style="background:#3b82f6;">앱 다운로드</a>
-  <div style="margin-top:1.5rem;padding-top:1.5rem;border-top:1px solid #334155;">
-    <p class="sub" style="margin-bottom:0.75rem;">이미 앱을 설치했나요? 계정을 연결하세요.</p>
-    <a href="${origin}/api/slack/authorize" class="btn btn-slack">Connect Slack</a>
-    <a href="${origin}/api/github/authorize" class="btn btn-github">Connect GitHub</a>
-  </div>
-</div></body></html>`
-}
-
-function successPage(provider: string, data: Record<string, string>): string {
-  const entries = Object.entries(data)
-    .map(
-      ([key, value]) => `
-      <div class="token-box">
-        <div class="token-label">${escapeHtml(key)}</div>
-        <div class="token-value" id="${escapeHtml(key)}">${escapeHtml(value)}</div>
-        <button class="copy-btn" onclick="copy('${escapeHtml(key)}')">Copy</button>
-      </div>`
-    )
-    .join('')
-
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(provider)} Connected</title><style>${PAGE_STYLE}</style></head>
-<body><div class="container">
-  <div class="success">&check;</div>
-  <h1>${escapeHtml(provider)} Connected</h1>
-  <p class="sub">Copy the values below into the desktop app settings.</p>
-  ${entries}
-  <p class="info">You can close this tab after copying.</p>
-</div>
-<script>
-function copy(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  navigator.clipboard.writeText(el.textContent).then(function() {
-    var btn = el.parentElement.querySelector('.copy-btn');
-    if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy'; }, 1500); }
-  });
-}
-</script>
-</body></html>`
-}
-
-function deepLinkPage(provider: string, deepLink: string, data: Record<string, string>): string {
-  const entries = Object.entries(data)
-    .map(
-      ([key, value]) => `
-      <div class="token-box">
-        <div class="token-label">${escapeHtml(key)}</div>
-        <div class="token-value" id="${escapeHtml(key)}">${escapeHtml(value)}</div>
-        <button class="copy-btn" onclick="copy('${escapeHtml(key)}')">Copy</button>
-      </div>`
-    )
-    .join('')
-
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(provider)} Connected</title><style>${PAGE_STYLE}
-  #fallback { display: none; margin-top: 1.5rem; }
-</style></head>
-<body><div class="container">
-  <div class="success">&check;</div>
-  <h1>${escapeHtml(provider)} Connected</h1>
-  <p class="sub" id="status">앱으로 돌아가는 중...</p>
-  <div id="fallback">
-    <p class="sub" style="margin-bottom:0.75rem;">앱이 열리지 않으면 아래 값을 복사하세요.</p>
-    ${entries}
-  </div>
-  <p class="info" id="hint"></p>
-</div>
-<script>
-function copy(id) {
-  var el = document.getElementById(id);
-  if (!el) return;
-  navigator.clipboard.writeText(el.textContent).then(function() {
-    var btn = el.parentElement.querySelector('.copy-btn');
-    if (btn) { btn.textContent = 'Copied!'; setTimeout(function() { btn.textContent = 'Copy'; }, 1500); }
-  });
-}
-// Try to open the app via deep link
-try { window.location = ${JSON.stringify(deepLink)}; } catch(e) {}
-// Show fallback after 2.5s if app didn't open
-setTimeout(function() {
-  document.getElementById('status').textContent = '앱이 자동으로 열리지 않나요?';
-  document.getElementById('fallback').style.display = 'block';
-  document.getElementById('hint').textContent = '값을 복사한 후 앱 설정에 붙여넣으세요.';
-}, 2500);
-</script>
-</body></html>`
-}
-
-function errorPage(provider: string, message: string): string {
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>${escapeHtml(provider)} Error</title><style>${PAGE_STYLE}</style></head>
-<body><div class="container">
-  <div class="error">&times;</div>
-  <h1>Connection Failed</h1>
-  <p class="sub">${escapeHtml(message)}</p>
-  <p class="info">Please close this tab and try again.</p>
+  <p class="info" style="margin-top:0;margin-bottom:1.5rem;">CLI 도구입니다. 터미널에서 <code style="background:#1e293b;padding:0.1rem 0.4rem;border-radius:0.25rem;">auto-remote setup</code> 을 실행하세요.</p>
 </div></body></html>`
 }
 
 app.get('/', (c) => {
-  return c.html(landingPage(getOrigin(c.req.raw)))
+  return c.html(landingPage())
 })
 
-// Download page — detects OS and links to latest GitHub Release
-const GITHUB_REPO = 'LauncherCapital/auto-remote'
-
-type ReleaseAsset = {
-  name: string
-  browser_download_url: string
-  size: number
-}
-
-type ReleaseData = {
-  tag_name: string
-  published_at: string
-  assets: ReleaseAsset[]
-}
-
-function detectOS(ua: string): 'mac' | 'windows' | 'unknown' {
-  const lower = ua.toLowerCase()
-  if (lower.includes('windows') || lower.includes('win64') || lower.includes('win32')) return 'windows'
-  if (lower.includes('macintosh') || lower.includes('mac os')) return 'mac'
-  return 'unknown'
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function downloadPage(release: ReleaseData | null, detectedOS: string, origin: string): string {
-  if (!release) {
-    return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>다운로드 - 업무일지 자동화</title><style>${PAGE_STYLE}</style></head>
-<body><div class="container">
-  <h1>업무일지 자동화</h1>
-  <p class="sub">아직 릴리즈된 버전이 없습니다.</p>
-  <p class="info">관리자에게 문의하세요.</p>
-</div></body></html>`
-  }
-
-  const dmg = release.assets.find(a => a.name.endsWith('.dmg'))
-  const exe = release.assets.find(a => a.name.endsWith('.exe'))
-  const version = release.tag_name
-
-  const primaryAsset = detectedOS === 'windows' ? exe : dmg
-  const secondaryAsset = detectedOS === 'windows' ? dmg : exe
-  const primaryLabel = detectedOS === 'windows' ? 'Windows' : 'macOS'
-  const secondaryLabel = detectedOS === 'windows' ? 'macOS' : 'Windows'
-
-  let primaryBtn = ''
-  if (primaryAsset) {
-    const url = `${origin}/download/${encodeURIComponent(primaryAsset.name)}`
-    primaryBtn = `<a href="${escapeHtml(url)}" class="btn" style="background:#3b82f6;font-size:1rem;padding:1rem 1.5rem;">
-      ${primaryLabel}용 다운로드 <span style="font-size:0.8rem;opacity:0.8;">${version}</span>
-      <br><span style="font-size:0.75rem;opacity:0.6;">${escapeHtml(primaryAsset.name)} · ${formatBytes(primaryAsset.size)}</span>
-    </a>`
-  }
-
-  let secondaryBtn = ''
-  if (secondaryAsset) {
-    const url = `${origin}/download/${encodeURIComponent(secondaryAsset.name)}`
-    secondaryBtn = `<a href="${escapeHtml(url)}" class="btn" style="background:#334155;font-size:0.85rem;">
-      ${secondaryLabel}용 다운로드
-      <span style="font-size:0.75rem;opacity:0.6;">${formatBytes(secondaryAsset.size)}</span>
-    </a>`
-  }
-
-  return `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>다운로드 - 업무일지 자동화</title><style>${PAGE_STYLE}
-  .version { font-size: 0.75rem; color: #64748b; margin-bottom: 1.5rem; }
-</style></head>
-<body><div class="container">
-  <h1>업무일지 자동화</h1>
-  <p class="sub">Remote.com Time Tracking 업무내용 자동 입력 도구</p>
-  <p class="version">${escapeHtml(version)} · ${new Date(release.published_at).toLocaleDateString('ko-KR')}</p>
-  ${primaryBtn}
-  ${secondaryBtn}
-  <p class="info">설치 후 이 사이트에서 Slack/GitHub 계정을 연결하세요.</p>
-</div></body></html>`
-}
-
-function githubHeaders(token: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    Accept: 'application/vnd.github.v3+json',
-    'User-Agent': 'auto-remote-web',
-  }
-  if (token) headers['Authorization'] = `Bearer ${token}`
-  return headers
-}
-
-app.get('/api/debug/release', async (c) => {
-  const env = getEnv(c)
-  const tokenPreview = env.GITHUB_TOKEN ? `${env.GITHUB_TOKEN.slice(0, 6)}...` : '(empty)'
-  try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-      headers: githubHeaders(env.GITHUB_TOKEN),
-    })
-    const body = await res.text()
-    return c.json({ status: res.status, tokenPreview, body: JSON.parse(body) })
-  } catch (err) {
-    return c.json({ error: String(err), tokenPreview })
-  }
-})
-
-app.get('/download', async (c) => {
-  const env = getEnv(c)
-  const ua = c.req.header('user-agent') ?? ''
-  const os = detectOS(ua)
-
-  let release: ReleaseData | null = null
-  try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-      headers: githubHeaders(env.GITHUB_TOKEN),
-    })
-    if (res.ok) {
-      release = (await res.json()) as ReleaseData
-    }
-  } catch {
-  }
-
-  return c.html(downloadPage(release, os, getOrigin(c.req.raw)))
-})
-
-app.get('/download/:filename', async (c) => {
-  const env = getEnv(c)
-  const filename = c.req.param('filename')
-
-  if (!env.GITHUB_TOKEN) {
-    return c.text('Not configured', 500)
-  }
-
-  try {
-    const res = await fetch(`https://api.github.com/repos/${GITHUB_REPO}/releases/latest`, {
-      headers: githubHeaders(env.GITHUB_TOKEN),
-    })
-    if (!res.ok) return c.text('Release not found', 404)
-
-    const release = (await res.json()) as ReleaseData
-    const asset = release.assets.find(a => a.name === filename)
-    if (!asset) return c.text('Asset not found', 404)
-
-    const assetRes = await fetch(asset.browser_download_url, {
-      headers: {
-        Authorization: `Bearer ${env.GITHUB_TOKEN}`,
-        Accept: 'application/octet-stream',
-        'User-Agent': 'auto-remote-web',
-      },
-      redirect: 'follow',
-    })
-
-    if (!assetRes.ok || !assetRes.body) return c.text('Download failed', 502)
-
-    return new Response(assetRes.body, {
-      headers: {
-        'Content-Type': 'application/octet-stream',
-        'Content-Disposition': `attachment; filename="${filename}"`,
-        ...(assetRes.headers.get('content-length')
-          ? { 'Content-Length': assetRes.headers.get('content-length')! }
-          : {}),
-      },
-    })
-  } catch {
-    return c.text('Download failed', 500)
-  }
-})
-
-// Slack OAuth — scopes kept in sync with src/main/oauth.ts
+// Slack OAuth
 app.get('/api/slack/authorize', (c) => {
   const env = getEnv(c)
   if (!env.SLACK_CLIENT_ID) {
     return c.html(errorPage('Slack', 'SLACK_CLIENT_ID not configured'), 500)
   }
 
+  const callbackUrl = c.req.query('callback') ?? ''
+  if (callbackUrl && !isValidCallbackUrl(callbackUrl)) {
+    return c.html(errorPage('Slack', '잘못된 callback URL'), 400)
+  }
+
   const state = generateState()
   const origin = getOrigin(c.req.raw)
 
-  setCookie(c, 'slack_oauth_state', state, {
+  // state 쿠키에 callback URL을 함께 저장 (JSON)
+  const statePayload = JSON.stringify({ state, callbackUrl })
+  setCookie(c, 'slack_oauth_state', statePayload, {
     maxAge: 600,
     httpOnly: true,
     secure: true,
@@ -381,18 +147,28 @@ app.get('/api/slack/callback', async (c) => {
   const oauthError = c.req.query('error')
 
   if (oauthError) {
-    return c.html(errorPage('Slack', `OAuth denied: ${oauthError}`))
+    return c.html(errorPage('Slack', `OAuth 거부됨: ${oauthError}`))
   }
 
   if (!code || !state) {
-    return c.html(errorPage('Slack', 'Missing authorization code or state'), 400)
+    return c.html(errorPage('Slack', '인증 코드 또는 state가 없습니다'), 400)
   }
 
-  const storedState = getCookie(c, 'slack_oauth_state')
+  const rawCookie = getCookie(c, 'slack_oauth_state')
   deleteCookie(c, 'slack_oauth_state', { path: '/' })
 
+  let storedState = ''
+  let callbackUrl = ''
+  try {
+    const parsed = JSON.parse(rawCookie ?? '{}')
+    storedState = parsed.state ?? ''
+    callbackUrl = parsed.callbackUrl ?? ''
+  } catch {
+    return c.html(errorPage('Slack', '잘못된 state 쿠키'), 400)
+  }
+
   if (!storedState || state !== storedState) {
-    return c.html(errorPage('Slack', 'Invalid state — possible CSRF. Please try again.'), 401)
+    return c.html(errorPage('Slack', '유효하지 않은 state — CSRF 가능성. 다시 시도하세요.'), 401)
   }
 
   try {
@@ -419,7 +195,7 @@ app.get('/api/slack/callback', async (c) => {
     }
 
     if (!tokenData.ok || !tokenData.authed_user?.access_token) {
-      return c.html(errorPage('Slack', tokenData.error ?? 'Failed to get access token'))
+      return c.html(errorPage('Slack', tokenData.error ?? '토큰 발급 실패'))
     }
 
     const userToken = tokenData.authed_user.access_token
@@ -432,32 +208,41 @@ app.get('/api/slack/callback', async (c) => {
       })
       const authData = (await authRes.json()) as { ok: boolean; user?: string }
       userName = authData.user ?? ''
-    } catch {
+    } catch {}
+
+    // CLI callback URL이 있으면 localhost로 리다이렉트
+    if (callbackUrl && isValidCallbackUrl(callbackUrl)) {
+      const dest = new URL(callbackUrl)
+      dest.searchParams.set('token', userToken)
+      dest.searchParams.set('userId', userId)
+      if (userName) dest.searchParams.set('userName', userName)
+      return c.redirect(dest.toString())
     }
 
-    const deepLink = `autoremote://oauth/slack?token=${encodeURIComponent(userToken)}&userId=${encodeURIComponent(userId)}&userName=${encodeURIComponent(userName)}`
-    return c.html(deepLinkPage('Slack', deepLink, {
-      SLACK_USER_TOKEN: userToken,
-      SLACK_USER_ID: userId,
-      ...(userName ? { SLACK_USER_NAME: userName } : {}),
-    }))
+    return c.html(successPage('Slack'))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return c.html(errorPage('Slack', message), 500)
   }
 })
 
-// GitHub OAuth — scopes kept in sync with src/main/oauth.ts
+// GitHub OAuth
 app.get('/api/github/authorize', (c) => {
   const env = getEnv(c)
   if (!env.GITHUB_CLIENT_ID) {
     return c.html(errorPage('GitHub', 'GITHUB_CLIENT_ID not configured'), 500)
   }
 
+  const callbackUrl = c.req.query('callback') ?? ''
+  if (callbackUrl && !isValidCallbackUrl(callbackUrl)) {
+    return c.html(errorPage('GitHub', '잘못된 callback URL'), 400)
+  }
+
   const state = generateState()
   const origin = getOrigin(c.req.raw)
 
-  setCookie(c, 'github_oauth_state', state, {
+  const statePayload = JSON.stringify({ state, callbackUrl })
+  setCookie(c, 'github_oauth_state', statePayload, {
     maxAge: 600,
     httpOnly: true,
     secure: true,
@@ -485,18 +270,28 @@ app.get('/api/github/callback', async (c) => {
   const oauthError = c.req.query('error')
 
   if (oauthError) {
-    return c.html(errorPage('GitHub', `OAuth denied: ${oauthError}`))
+    return c.html(errorPage('GitHub', `OAuth 거부됨: ${oauthError}`))
   }
 
   if (!code || !state) {
-    return c.html(errorPage('GitHub', 'Missing authorization code or state'), 400)
+    return c.html(errorPage('GitHub', '인증 코드 또는 state가 없습니다'), 400)
   }
 
-  const storedState = getCookie(c, 'github_oauth_state')
+  const rawCookie = getCookie(c, 'github_oauth_state')
   deleteCookie(c, 'github_oauth_state', { path: '/' })
 
+  let storedState = ''
+  let callbackUrl = ''
+  try {
+    const parsed = JSON.parse(rawCookie ?? '{}')
+    storedState = parsed.state ?? ''
+    callbackUrl = parsed.callbackUrl ?? ''
+  } catch {
+    return c.html(errorPage('GitHub', '잘못된 state 쿠키'), 400)
+  }
+
   if (!storedState || state !== storedState) {
-    return c.html(errorPage('GitHub', 'Invalid state — possible CSRF. Please try again.'), 401)
+    return c.html(errorPage('GitHub', '유효하지 않은 state — CSRF 가능성. 다시 시도하세요.'), 401)
   }
 
   try {
@@ -525,7 +320,7 @@ app.get('/api/github/callback', async (c) => {
 
     if (!tokenData.access_token) {
       return c.html(
-        errorPage('GitHub', tokenData.error_description ?? tokenData.error ?? 'Failed to get access token')
+        errorPage('GitHub', tokenData.error_description ?? tokenData.error ?? '토큰 발급 실패')
       )
     }
 
@@ -542,14 +337,17 @@ app.get('/api/github/callback', async (c) => {
       })
       const userData = (await userRes.json()) as { login?: string }
       username = userData.login ?? ''
-    } catch {
+    } catch {}
+
+    // CLI callback URL이 있으면 localhost로 리다이렉트
+    if (callbackUrl && isValidCallbackUrl(callbackUrl)) {
+      const dest = new URL(callbackUrl)
+      dest.searchParams.set('token', accessToken)
+      if (username) dest.searchParams.set('username', username)
+      return c.redirect(dest.toString())
     }
 
-    const deepLink = `autoremote://oauth/github?token=${encodeURIComponent(accessToken)}&username=${encodeURIComponent(username)}`
-    return c.html(deepLinkPage('GitHub', deepLink, {
-      GITHUB_ACCESS_TOKEN: accessToken,
-      ...(username ? { GITHUB_USERNAME: username } : {}),
-    }))
+    return c.html(successPage('GitHub'))
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err)
     return c.html(errorPage('GitHub', message), 500)

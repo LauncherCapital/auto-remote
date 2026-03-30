@@ -1,12 +1,17 @@
-import { readFileSync, writeFileSync, existsSync } from 'fs'
-import { join, dirname } from 'path'
-import { fileURLToPath } from 'url'
+import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
+import { join } from 'path'
+import { homedir } from 'os'
 import type { AppConfig, GitHubRepo } from './types'
 
-const __dirname = dirname(fileURLToPath(import.meta.url))
-const PROJECT_ROOT = join(__dirname, '..', '..')
-const ENV_PATH = join(PROJECT_ROOT, '.env')
-const CONFIG_PATH = join(PROJECT_ROOT, 'config.json')
+const CONFIG_DIR = join(homedir(), '.config', 'auto-remote')
+const ENV_PATH = join(CONFIG_DIR, '.env')
+const CONFIG_PATH = join(CONFIG_DIR, 'config.json')
+
+function ensureConfigDir(): void {
+  if (!existsSync(CONFIG_DIR)) {
+    mkdirSync(CONFIG_DIR, { recursive: true })
+  }
+}
 
 function parseEnvFile(path: string): Record<string, string> {
   if (!existsSync(path)) return {}
@@ -64,21 +69,18 @@ export function loadConfig(): AppConfig {
       headless: (json.general?.headless as boolean) ?? true,
       slowMo: (json.general?.slowMo as number) ?? 0,
     },
-    scheduler: {
-      enabled: (json.scheduler?.enabled as boolean) ?? false,
-      time: (json.scheduler?.time as string) ?? '18:00',
-      skipWeekends: (json.scheduler?.skipWeekends as boolean) ?? true,
-    },
   }
 }
 
 export function saveJsonConfig(config: Record<string, unknown>): void {
+  ensureConfigDir()
   const existing = loadJsonConfig(CONFIG_PATH)
   const merged = deepMerge(existing, config)
   writeFileSync(CONFIG_PATH, JSON.stringify(merged, null, 2), 'utf-8')
 }
 
 export function saveEnvValue(key: string, value: string): void {
+  ensureConfigDir()
   const env = parseEnvFile(ENV_PATH)
   env[key] = value
   const content = Object.entries(env)
@@ -110,7 +112,7 @@ function deepMerge(target: Record<string, unknown>, source: Record<string, unkno
 }
 
 export function getAuthStatePath(): string {
-  return join(PROJECT_ROOT, 'auth.json')
+  return join(CONFIG_DIR, 'auth.json')
 }
 
 export function getOAuthCredentials(provider: 'slack' | 'github'): { clientId: string; clientSecret: string } {
